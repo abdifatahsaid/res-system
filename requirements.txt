@@ -1,0 +1,10 @@
+flask==3.0.0
+gspread==6.0.0
+google-auth==2.25.2
+google-auth-oauthlib==1.2.0
+Werkzeug==3.0.1
+requests==2.31.0
+python-dateutil==2.8.2
+Pillow==10.1.0
+flask-compress==1.14
+gunicorn==21.2.0
