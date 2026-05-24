@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#FF6B35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RES SYSTEM">
+  <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+<title>Message — RES SYSTEM</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-circle">🏪</div>
+      <h2>RES SYSTEM</h2>
+      <p>Welcome!</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/customer/home"        class="nav-item"><span class="nav-icon">🏠</span> Home</a>
+      <a href="/customer/menu"        class="nav-item"><span class="nav-icon">🍽️</span> Menu</a>
+      <a href="/customer/message"     class="nav-item active"><span class="nav-icon">💬</span> Message</a>
+      <a href="/customer/call-center" class="nav-item"><span class="nav-icon">📞</span> Call Center</a>
+      <a href="/customer/about"       class="nav-item"><span class="nav-icon">ℹ️</span> About</a>
+      <a href="/logout"               class="nav-item logout"><span class="nav-icon">🚪</span> Logout</a>
+    </nav>
+    <div class="sidebar-footer">© Created By Abdifatah Said</div>
+  </aside>
+  <div class="sidebar-overlay"></div>
+
+  <main class="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger">☰</button>
+        <span class="topbar-title">💬 Message</span>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div style="max-width:600px;margin:0 auto;">
+
+        <!-- Header Card -->
+        <div style="background:linear-gradient(135deg,rgba(52,152,219,0.2),rgba(155,89,182,0.1));border:1px solid rgba(52,152,219,0.3);border-radius:20px;padding:24px;margin-bottom:24px;text-align:center;">
+          <div style="font-size:48px;margin-bottom:10px;">💬</div>
+          <h2 style="font-size:20px;font-weight:700;color:white;margin-bottom:6px;">Noo Dir Cabashadaada</h2>
+          <p style="color:var(--text2);font-size:13px;">Cabashadaada ama su'aashaada ku qor hoos — si toos ah WhatsApp ayaan u helayaa.</p>
+        </div>
+
+        <!-- Message Box -->
+        <div class="card">
+          <label class="form-label" style="margin-bottom:12px;font-size:14px;">✍️ Fariintaada:</label>
+          <textarea class="message-area" id="msgText"
+            placeholder="Halkan ku qor cabashadaada, su'aashaada ama talooyinkaaga..."
+            style="min-height:180px;"></textarea>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px;margin-bottom:16px;">
+            <span id="charCount" style="font-size:12px;color:var(--text2);">0 xaraf</span>
+            <span style="font-size:12px;color:var(--text2);">WhatsApp: +252906261369</span>
+          </div>
+
+          <button class="btn btn-primary btn-lg" style="width:100%;" onclick="sendMessage()">
+            📤 Send Message (WhatsApp)
+          </button>
+
+          <div id="sendSuccess" style="display:none;margin-top:16px;background:rgba(39,174,96,0.12);border:1px solid rgba(39,174,96,0.3);border-radius:12px;padding:14px;text-align:center;color:var(--green);font-weight:600;">
+            ✅ Fariintaadu si fiican ayay u gaartay!
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div style="margin-top:20px;text-align:center;color:var(--text2);font-size:13px;">
+          <p>🕐 Jawaabta waxaan kuu dirin doonaa sida ugu dhakhsaha badan.</p>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      📞 <strong>+252907899345</strong> &nbsp;|&nbsp; 🌐 <a href="#">www.restsystem.com</a>
+      &nbsp;|&nbsp; © Created By Abdifatah Said
+    </footer>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+const msgArea = document.getElementById('msgText');
+msgArea.addEventListener('input', () => {
+  document.getElementById('charCount').textContent = msgArea.value.length + ' xaraf';
+});
+
+let _msgSending = false;
+async function sendMessage() {
+  if (_msgSending) return;
+  const msg = msgArea.value.trim();
+  if (!msg) { showToast('Fariinta gali!', 'error'); return; }
+
+  _msgSending = true;
+  const btn = document.querySelector('button[onclick="sendMessage()"]');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Sending...'; }
+
+  try {
+    await apiPost('/api/message/send', { message: msg });
+    const waNumber = '252906261369';
+    window.open(`https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`, '_blank');
+    document.getElementById('sendSuccess').style.display = 'block';
+    msgArea.value = '';
+    document.getElementById('charCount').textContent = '0 xaraf';
+    showToast('✅ Fariinta la diray!', 'success');
+    setTimeout(() => document.getElementById('sendSuccess').style.display = 'none', 4000);
+  } catch(e) {
+    showToast('❌ Error!', 'error');
+  } finally {
+    _msgSending = false;
+    if (btn) { btn.disabled = false; btn.textContent = '📤 Send Message (WhatsApp)'; }
+  }
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>

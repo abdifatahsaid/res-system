@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#FF6B35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RES SYSTEM">
+  <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+<title>Home — RES SYSTEM</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-circle">🏪</div>
+      <h2>RES SYSTEM</h2>
+      <p>Welcome!</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/customer/home"        class="nav-item active"><span class="nav-icon">🏠</span> Home</a>
+      <a href="/customer/menu"        class="nav-item"><span class="nav-icon">🍽️</span> Menu</a>
+      <a href="/customer/message"     class="nav-item"><span class="nav-icon">💬</span> Message</a>
+      <a href="/customer/call-center" class="nav-item"><span class="nav-icon">📞</span> Call Center</a>
+      <a href="/customer/about"       class="nav-item"><span class="nav-icon">ℹ️</span> About</a>
+      <a href="/logout"               class="nav-item logout"><span class="nav-icon">🚪</span> Logout</a>
+    </nav>
+    <div class="sidebar-footer">© Created By Abdifatah Said</div>
+  </aside>
+  <div class="sidebar-overlay"></div>
+
+  <main class="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger">☰</button>
+        <span class="topbar-title">🏠 Home</span>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- Welcome Banner -->
+      <div style="background:linear-gradient(135deg,rgba(255,107,53,0.2),rgba(52,152,219,0.1));border:1px solid rgba(255,107,53,0.3);border-radius:20px;padding:28px;margin-bottom:28px;text-align:center;">
+        <div style="font-size:48px;margin-bottom:12px;">🏪</div>
+        <h1 style="font-family:'Playfair Display',serif;font-size:28px;color:var(--primary);margin-bottom:8px;">RES SYSTEM</h1>
+        <p style="color:var(--text2);font-size:14px;">Food • Shopping • Khudaar • Raashin</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:500px;margin:0 auto;">
+        <a href="/customer/menu" style="text-decoration:none;">
+          <div style="background:linear-gradient(135deg,var(--primary),#FF8C42);border-radius:20px;padding:28px 20px;text-align:center;cursor:pointer;transition:all 0.3s ease;box-shadow:0 8px 24px rgba(255,107,53,0.3);"
+            onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform='translateY(0)'">
+            <div style="font-size:36px;margin-bottom:10px;">🛒</div>
+            <div style="font-size:14px;font-weight:700;color:white;">Create New</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">Order / Deliver</div>
+          </div>
+        </a>
+        <div style="background:linear-gradient(135deg,var(--blue),#5DADE2);border-radius:20px;padding:28px 20px;text-align:center;cursor:pointer;transition:all 0.3s ease;box-shadow:0 8px 24px rgba(52,152,219,0.3);"
+          onclick="openViewOrders()"
+          onmouseover="this.style.transform='translateY(-6px)'" onmouseout="this.style.transform='translateY(0)'">
+          <div style="font-size:36px;margin-bottom:10px;">📬</div>
+          <div style="font-size:14px;font-weight:700;color:white;">View Delivered</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:4px;">Orders</div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      📞 <strong>+252907899345</strong> &nbsp;|&nbsp; 🌐 <a href="#">www.restsystem.com</a>
+      &nbsp;|&nbsp; © Created By Abdifatah Said
+    </footer>
+  </main>
+</div>
+
+<!-- VIEW ORDERS MODAL -->
+<div class="modal-overlay" id="viewOrdersModal">
+  <div class="modal" style="max-width:700px;">
+    <div class="modal-header">
+      <span class="modal-title">📬 My Orders</span>
+      <button class="modal-close" onclick="closeModal('viewOrdersModal')">✕</button>
+    </div>
+    <div id="myOrdersList">
+      <div class="spinner"></div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+async function openViewOrders() {
+  openModal('viewOrdersModal');
+  const data = await apiGet('/api/customer/orders');
+  const list = document.getElementById('myOrdersList');
+
+  if (!data.orders || !data.orders.length) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:var(--text2);">Order kuma jirto 📭</div>';
+    return;
+  }
+
+  list.innerHTML = data.orders.map(o => {
+    const status = (o.Status || '').toLowerCase();
+    const steps = ['pending','processed','on the way','delivery confirmed'];
+    const stepIdx = steps.indexOf(status);
+
+    let receivedBtn = '';
+    if (status === 'on the way') {
+      receivedBtn = `<button class="btn btn-success" style="width:100%;margin-top:12px;" onclick="confirmReceived('${o.Order_ID}')">
+        ✅ Received — Waan Helay!
+      </button>`;
+    }
+
+    return `
+      <div class="card" style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;">
+          <div>
+            <code style="color:var(--primary);font-size:12px;">${o.Order_ID}</code>
+            <div style="color:white;font-weight:600;margin-top:4px;">${parseItems(o.Items)}</div>
+            <div style="color:var(--text2);font-size:12px;margin-top:2px;">${formatDate(o.Date)}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:20px;font-weight:800;color:var(--primary);">$${parseFloat(o.Final_Total||0).toFixed(2)}</div>
+            ${statusBadge(o.Status)}
+          </div>
+        </div>
+
+        <!-- Delivery tracker -->
+        <div class="delivery-steps" style="margin-top:16px;">
+          ${[
+            {icon:'⏳', label:'Pending'},
+            {icon:'✅', label:'Processed'},
+            {icon:'🚚', label:'On the Way'},
+            {icon:'🎉', label:'Delivered'}
+          ].map((s,i) => `
+            <div class="delivery-step ${i < stepIdx ? 'done' : i === stepIdx ? 'active' : ''}">
+              <div class="step-dot">${s.icon}</div>
+              <div class="step-label">${s.label}</div>
+            </div>
+          `).join('')}
+        </div>
+
+        ${receivedBtn}
+      </div>
+    `;
+  }).join('');
+}
+
+let _receivedSending = false;
+async function confirmReceived(orderId) {
+  if (_receivedSending) return;
+  _receivedSending = true;
+  const btns = document.querySelectorAll(`button[onclick="confirmReceived('${orderId}')"]`);
+  btns.forEach(b => { b.disabled = true; b.textContent = '⏳...'; });
+
+  try {
+    const res = await apiPost('/api/customer/received', { order_id: orderId });
+    if (res.success) {
+      showToast('✅ Waan helay! Mahadsanid!', 'success');
+      openViewOrders();
+    } else {
+      btns.forEach(b => { b.disabled = false; b.textContent = '✅ Received'; });
+    }
+  } catch(e) {
+    showToast('❌ Error!', 'error');
+    btns.forEach(b => { b.disabled = false; b.textContent = '✅ Received'; });
+  } finally {
+    _receivedSending = false;
+  }
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>
