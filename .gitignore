@@ -1,5 +1,0 @@
-__pycache__/
-*.pyc
-credentials.json
-static/images/menu_*
-.env
