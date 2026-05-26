@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Payments — RES SYSTEM</title>
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#FF6B35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="apple-touch-icon" href="/static/images/icon-192.png">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-circle">🏪</div>
+      <h2>RES SYSTEM</h2>
+      <p>Admin Panel</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard"   class="nav-item"><span class="nav-icon">🏠</span> Home</a>
+      <a href="/admin/live-orders" class="nav-item"><span class="nav-icon">📦</span> Live Orders</a>
+      <a href="/admin/menu"        class="nav-item"><span class="nav-icon">🍽️</span> Menu</a>
+      <a href="/admin/payments"    class="nav-item active"><span class="nav-icon">💳</span> Payment History</a>
+      <a href="/admin/about"       class="nav-item"><span class="nav-icon">ℹ️</span> About</a>
+      <a href="/logout"            class="nav-item logout"><span class="nav-icon">🚪</span> Logout</a>
+    </nav>
+    <div class="sidebar-footer">© Created By Abdifatah Said</div>
+  </aside>
+  <div class="sidebar-overlay"></div>
+
+  <main class="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger">☰</button>
+        <span class="topbar-title">💳 Payment History</span>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- Period Controls -->
+      <div class="period-controls">
+        <div class="period-group">
+          <button class="period-btn active" data-period="today" onclick="setPeriod('today',this)">📅 Today</button>
+
+          <button class="updown-btn" onclick="changeOffset('week',-1)">▲</button>
+          <button class="period-btn" data-period="week" onclick="setPeriod('week',this)">📆 This Week</button>
+          <button class="updown-btn" onclick="changeOffset('week',1)">▼</button>
+
+          <button class="updown-btn" onclick="changeOffset('month',-1)">▲</button>
+          <button class="period-btn" data-period="month" onclick="setPeriod('month',this)" id="monthBtn">🗓️ This Month</button>
+          <button class="updown-btn" onclick="changeOffset('month',1)">▼</button>
+
+          <button class="updown-btn" onclick="changeOffset('year',-1)">▲</button>
+          <button class="period-btn" data-period="year" onclick="setPeriod('year',this)">📊 This Year</button>
+          <button class="updown-btn" onclick="changeOffset('year',1)">▼</button>
+        </div>
+      </div>
+
+      <!-- Total Card -->
+      <div class="stat-card orange" style="margin-bottom:24px;max-width:300px;">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value" id="payTotal">$0.00</div>
+        <div class="stat-label" id="payPeriodLabel">Today's Revenue</div>
+      </div>
+
+      <!-- Payments Table -->
+      <div class="card">
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Order ID</th>
+                <th>Amount</th>
+                <th>Items</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Edit / Delete</th>
+              </tr>
+            </thead>
+            <tbody id="paymentsTable">
+              <tr><td colspan="8" style="text-align:center;padding:30px;">
+                <div class="spinner"></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      📞 <strong>+252907899345</strong> &nbsp;|&nbsp;
+      🌐 <a href="#">www.restsystem.com</a>
+      &nbsp;|&nbsp; © Created By Abdifatah Said
+    </footer>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+let currentPeriod = 'today';
+let offsets = { today: 0, week: 0, month: 0, year: 0 };
+
+// ── Period Controls ──
+function setPeriod(period, btn) {
+  currentPeriod = period;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (period === 'month') updateMonthLabel();
+  loadPayments();
+}
+
+function updateMonthLabel() {
+  const now = new Date();
+  const d   = new Date(now.getFullYear(), now.getMonth() + offsets.month, 1);
+  document.getElementById('monthBtn').textContent = '🗓️ ' + d.toLocaleString('default', { month: 'long' });
+}
+
+function changeOffset(period, dir) {
+  if (period !== currentPeriod) {
+    currentPeriod = period;
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`[data-period="${period}"]`).classList.add('active');
+  }
+  offsets[period] += dir;
+  if (period === 'month') updateMonthLabel();
+  loadPayments();
+}
+
+// ── Parse Items/Category ──
+function parseCategory(val) {
+  if (!val) return '—';
+  let str = String(val).trim();
+
+  // Clean surrounding quotes from Google Sheets
+  while ((str.startsWith('"') && str.endsWith('"')) ||
+         (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1);
+  }
+  str = str.replace(/\\"/g, '"').replace(/\\/g, '');
+
+  const COLORS = {
+    food:'#FF6B35', shopping:'#3498DB', khudaar:'#27AE60', raashin:'#9B59B6'
+  };
+
+  function makeBadge(cat, name, qty) {
+    const c = COLORS[cat] || '#888';
+    const badge = cat
+      ? `<span style="display:inline-block;background:${c}28;color:${c};padding:2px 9px;border-radius:50px;font-size:10px;font-weight:800;border:1px solid ${c}44;margin-right:6px;white-space:nowrap;">${cat}</span>`
+      : '';
+    return `<div style="margin-bottom:6px;display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+      ${badge}
+      <span style="color:#fff;font-size:13px;font-weight:600;">${name}</span>
+      <span style="color:${c||'#aaa'};font-size:12px;font-weight:700;">×${qty}</span>
+    </div>`;
+  }
+
+  // ── Try JSON parse ──
+  if (str.indexOf('[') !== -1 || str.indexOf('{') !== -1) {
+    const start = Math.min(
+      str.indexOf('[') !== -1 ? str.indexOf('[') : 9999,
+      str.indexOf('{') !== -1 ? str.indexOf('{') : 9999
+    );
+    let parsed = null;
+    try { parsed = JSON.parse(str.substring(start)); } catch(e1) {
+      try { parsed = JSON.parse(str.substring(start).replace(/'/g, '"')); } catch(e2) {}
+    }
+    if (parsed) {
+      const arr = Array.isArray(parsed) ? parsed : [parsed];
+      return arr.map(i => makeBadge(
+        (i.category || i.Category || '').toLowerCase(),
+        i.name || i.Name || '?',
+        i.qty  || i.Qty  || 1
+      )).join('');
+    }
+  }
+
+  // ── Plain text: "name x1 | name2 x2" format ──
+  if (str.includes('|') || /x\d/.test(str)) {
+    const parts = str.split('|').map(p => p.trim()).filter(Boolean);
+    return parts.map(part => {
+      // Extract qty — match " x1" or " ×1"
+      const qtyMatch = part.match(/[x×]\s*(\d+)\s*$/i);
+      const qty  = qtyMatch ? qtyMatch[1] : '1';
+      const name = part.replace(/[x×]\s*\d+\s*$/i, '').trim();
+      // Guess category from name
+      const nl = name.toLowerCase();
+      const cat = nl.includes('pizza')||nl.includes('burger')||nl.includes('shaah')||nl.includes('food') ? 'food'
+                : nl.includes('oil')||nl.includes('shampoo')||nl.includes('soap')   ? 'shopping'
+                : nl.includes('tomato')||nl.includes('basal')||nl.includes('basbaas')? 'khudaar'
+                : nl.includes('bariis')||nl.includes('macaro')||nl.includes('qamdi') ? 'raashin'
+                : '';
+      return makeBadge(cat, name, qty);
+    }).join('');
+  }
+
+  // ── Final fallback ──
+  return `<span style="color:#fff;font-size:12px;">${str.length > 50 ? str.substring(0,50)+'...' : str}</span>`;
+}
+
+// ── Delete Payment ──
+async function deletePayment(pid, oid) {
+  if (!confirm('Payment-kan delete gareeyaa?\nOrder-kii customer-ka "Rejected" u noqonayaa.')) return;
+
+  const btn = document.querySelector(`button[onclick="deletePayment('${pid}','${oid}')"]`);
+  if (btn) { btn.disabled = true; btn.textContent = '⏳...'; }
+
+  try {
+    const res = await apiPost('/api/payments/delete', {
+      payment_id: pid,
+      order_id:   oid
+    });
+    if (res.success) {
+      showToast('🗑️ Payment deleted — Customer "Rejected" u noqday', 'success');
+      // Remove row immediately
+      const row = document.getElementById('row-' + pid);
+      if (row) {
+        row.style.transition = 'all 0.3s ease';
+        row.style.opacity    = '0';
+        row.style.transform  = 'translateX(-20px)';
+        setTimeout(() => row.remove(), 300);
+      }
+      // Reload total
+      setTimeout(loadPayments, 400);
+    } else {
+      showToast('❌ Error: ' + (res.message || 'Failed'), 'error');
+      if (btn) { btn.disabled = false; btn.textContent = '🗑️ Delete'; }
+    }
+  } catch(err) {
+    showToast('❌ Network error!', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = '🗑️ Delete'; }
+  }
+}
+
+// ── Load Payments ──
+async function loadPayments() {
+  const tbody = document.getElementById('paymentsTable');
+  tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;"><div class="spinner"></div></td></tr>';
+  document.getElementById('payTotal').textContent = '$0.00';
+
+  const params = new URLSearchParams({
+    period: currentPeriod,
+    offset: offsets[currentPeriod]
+  });
+
+  let data;
+  try {
+    const res = await fetch('/api/payments?' + params);
+    data = await res.json();
+  } catch(err) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--red);">❌ Network error — refresh page</td></tr>';
+    return;
+  }
+
+  // Update total
+  const total = parseFloat(data.total || 0);
+  document.getElementById('payTotal').textContent = '$' + total.toFixed(2);
+
+  const payments = data.payments || [];
+
+  if (!payments.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text2);">💳 Xog kuma jirto</td></tr>';
+    return;
+  }
+
+  // Render rows
+  let rows = '';
+  for (const p of payments) {
+    const pid    = p.Payment_ID || p['Payment_ID'] || '';
+    const oid    = p.Order_ID   || '';
+    const amt    = parseFloat(p.Amount || 0).toFixed(2);
+    const cat    = parseCategory(p.Category || p.Items || '');
+    const date   = formatDate(p.Date || '');
+    const time   = p.Time || '—';
+    const status = p.Status || 'Paid';
+
+    rows += `<tr id="row-${pid}">
+      <td><code style="color:var(--primary);font-size:11px;">${pid || '—'}</code></td>
+      <td><code style="color:var(--text2);font-size:11px;">${oid || '—'}</code></td>
+      <td style="white-space:nowrap;">
+        <span id="amt-${pid}" style="font-weight:700;color:var(--primary);font-size:15px;">$${amt}</span>
+        <input id="inp-${pid}" type="number" value="${p.Amount || 0}"
+          style="display:none;background:rgba(255,255,255,0.08);border:2px solid var(--primary);color:white;padding:6px 10px;border-radius:8px;width:90px;font-family:inherit;font-size:13px;"
+          step="0.01"
+          onkeydown="if(event.key==='Enter') saveEdit('${pid}')">
+      </td>
+      <td style="max-width:200px;font-size:12px;color:white;line-height:1.6;">${cat}</td>
+      <td style="font-size:12px;color:var(--text2);">${date}</td>
+      <td style="font-size:12px;color:var(--text2);">${time}</td>
+      <td><span class="badge confirmed">✅ ${status}</span></td>
+      <td style="white-space:nowrap;">
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
+          <div style="display:flex;gap:6px;align-items:stretch;">
+            <button class="btn btn-gold btn-sm" id="editBtn-${pid}"
+              onclick="startEdit('${pid}')"
+              style="padding:7px 10px;font-size:11px;min-width:64px;font-weight:700;">
+              ✏️ Edit
+            </button>
+            <button class="btn btn-success btn-sm" id="saveBtn-${pid}"
+              style="display:none;padding:7px 10px;font-size:11px;min-width:64px;font-weight:700;"
+              onclick="saveEdit('${pid}')">
+              💾 Save
+            </button>
+            <button class="btn btn-blue btn-sm"
+              onclick="openEditItems('${pid}','${oid}')"
+              style="padding:7px 10px;font-size:11px;min-width:64px;font-weight:700;background:linear-gradient(135deg,#3498DB,#5DADE2);">
+              📦 Items
+            </button>
+            <button class="btn btn-danger btn-sm"
+              onclick="deletePayment('${pid}','${oid}')"
+              style="padding:7px 10px;font-size:11px;min-width:64px;font-weight:700;">
+              🗑️ Delete
+            </button>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  }
+  tbody.innerHTML = rows;
+}
+
+// ── Edit / Save ──
+function startEdit(pid) {
+  // Hide amount, show input
+  document.getElementById('amt-'     + pid).style.display = 'none';
+  document.getElementById('inp-'     + pid).style.display = 'inline-block';
+  document.getElementById('editBtn-' + pid).style.display = 'none';
+  document.getElementById('saveBtn-' + pid).style.display = 'inline-flex';
+  // Focus input
+  setTimeout(() => {
+    const inp = document.getElementById('inp-' + pid);
+    if (inp) { inp.focus(); inp.select(); }
+  }, 50);
+}
+
+async function saveEdit(pid) {
+  const inp    = document.getElementById('inp-' + pid);
+  const newAmt = inp ? inp.value : '';
+
+  if (!newAmt || isNaN(parseFloat(newAmt))) {
+    showToast('⚠️ Qiimaha saxda ah gali!', 'error');
+    return;
+  }
+
+  // Show loading on save button
+  const saveBtn = document.getElementById('saveBtn-' + pid);
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '⏳...'; }
+
+  try {
+    const res = await apiPost('/api/payments/edit', {
+      payment_id: pid,
+      amount: parseFloat(newAmt)
+    });
+
+    if (res.success) {
+      showToast('✅ Google Sheet la cusbooneysiiyay!', 'success');
+      // Update display immediately without reload
+      const amtEl = document.getElementById('amt-' + pid);
+      if (amtEl) amtEl.textContent = '$' + parseFloat(newAmt).toFixed(2);
+      document.getElementById('amt-'     + pid).style.display = 'inline';
+      document.getElementById('inp-'     + pid).style.display = 'none';
+      document.getElementById('editBtn-' + pid).style.display = 'inline-flex';
+      document.getElementById('saveBtn-' + pid).style.display = 'none';
+      // Reload total
+      loadPayments();
+    } else {
+      showToast('❌ Error: ' + (res.message || 'Google Sheet connection failed'), 'error');
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save'; }
+    }
+  } catch(err) {
+    showToast('❌ Network error!', 'error');
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save'; }
+  }
+}
+
+// Init
+loadPayments();
+</script>
+
+<!-- EDIT ITEMS MODAL -->
+<div class="modal-overlay" id="editItemsModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="modal-title">📦 Edit Items</span>
+      <button class="modal-close" onclick="closeModal('editItemsModal')">✕</button>
+    </div>
+
+    <div id="editItemsBody" style="max-height:60vh;overflow-y:auto;"></div>
+
+    <div style="display:flex;gap:10px;margin-top:16px;">
+      <button class="btn btn-primary" onclick="addItemRow()" style="flex:1;">
+        ➕ Add Item
+      </button>
+      <button class="btn btn-success btn-lg" onclick="saveItems()" style="flex:2;">
+        💾 Save to Google Sheets
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>

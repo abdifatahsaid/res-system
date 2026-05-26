@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#FF6B35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RES SYSTEM">
+  <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+<title>Admin Dashboard — RES SYSTEM</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-circle">🏪</div>
+      <h2>RES SYSTEM</h2>
+      <p>Admin Panel</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/admin/dashboard" class="nav-item active" data-page="home">
+        <span class="nav-icon">🏠</span> Home
+      </a>
+      <a href="/admin/live-orders" class="nav-item" data-page="live">
+        <span class="nav-icon">📦</span> Live Orders
+      </a>
+      <a href="/admin/menu" class="nav-item" data-page="menu">
+        <span class="nav-icon">🍽️</span> Menu
+      </a>
+      <a href="/admin/payments" class="nav-item" data-page="payments">
+        <span class="nav-icon">💳</span> Payment History
+      </a>
+      <a href="/admin/about" class="nav-item" data-page="about">
+        <span class="nav-icon">ℹ️</span> About
+      </a>
+      <a href="/logout" class="nav-item logout">
+        <span class="nav-icon">🚪</span> Logout
+      </a>
+    </nav>
+    <div class="sidebar-footer">© Created By Abdifatah Said</div>
+  </aside>
+  <div class="sidebar-overlay"></div>
+
+  <!-- Main -->
+  <main class="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger">☰</button>
+        <span class="topbar-title">📊 Dashboard</span>
+      </div>
+      <div class="topbar-right">
+        <button class="notification-bell" onclick="toggleNotifPanel()" id="notifBtn">
+          🔔
+          <span class="notification-badge" id="notifCount" style="display:none">0</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Notification Panel -->
+    <div class="notif-panel" id="notifPanel">
+      <div class="notif-header">🔔 Pending Orders <span id="notifTotal"></span></div>
+      <div id="notifList"></div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ── PERIOD BUTTONS ── -->
+      <style>
+        .prd-wrap {
+          display: flex;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+
+        .prd-btn {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 4px;
+          padding: 14px 22px;
+          border-radius: 20px;
+          border: 2px solid transparent;
+          cursor: pointer;
+          font-family: 'Poppins', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+          background: rgba(255,255,255,0.05);
+          color: var(--text2);
+          min-width: 120px;
+          position: relative;
+        }
+
+        .prd-btn .prd-icon { font-size: 22px; line-height: 1; }
+        .prd-btn .prd-label { font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+        .prd-btn .prd-sub { font-size: 10px; font-weight: 500; opacity: 0.7; }
+
+        .prd-btn:hover {
+          transform: translateY(-4px);
+          background: rgba(255,255,255,0.1);
+          color: white;
+        }
+
+        .prd-btn.active-today {
+          background: linear-gradient(135deg, #FF6B35, #FF8C42);
+          border-color: #FF6B35;
+          color: white;
+          box-shadow: 0 8px 24px rgba(255,107,53,0.45);
+        }
+
+        .prd-btn.active-month {
+          background: linear-gradient(135deg, #3498DB, #5DADE2);
+          border-color: #3498DB;
+          color: white;
+          box-shadow: 0 8px 24px rgba(52,152,219,0.45);
+        }
+
+        .prd-btn.active-year {
+          background: linear-gradient(135deg, #9B59B6, #BB8FCE);
+          border-color: #9B59B6;
+          color: white;
+          box-shadow: 0 8px 24px rgba(155,89,182,0.45);
+        }
+
+        /* Month/Year nav arrows inside button */
+        .prd-nav {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-top: 4px;
+        }
+
+        .prd-arrow {
+          width: 24px; height: 24px;
+          border-radius: 50%;
+          border: 1.5px solid rgba(255,255,255,0.3);
+          background: rgba(255,255,255,0.1);
+          color: white;
+          font-size: 11px;
+          cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          transition: all 0.2s;
+          flex-shrink: 0;
+        }
+        .prd-arrow:hover { background: rgba(255,255,255,0.25); transform: scale(1.15); }
+
+        .prd-current { font-size: 11px; font-weight: 700; min-width: 60px; text-align: center; }
+
+        /* Search Data */
+        .search-data-bar {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 16px;
+          padding: 12px 18px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+
+        .search-data-bar label {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--text2);
+          white-space: nowrap;
+        }
+
+        .search-date-input {
+          background: rgba(255,255,255,0.08);
+          border: 1.5px solid rgba(255,255,255,0.15);
+          border-radius: 10px;
+          color: white;
+          padding: 8px 14px;
+          font-family: 'Poppins', sans-serif;
+          font-size: 13px;
+          outline: none;
+          transition: all 0.3s;
+          cursor: pointer;
+        }
+
+        .search-date-input:focus {
+          border-color: var(--primary);
+          background: rgba(255,107,53,0.1);
+          box-shadow: 0 0 0 3px rgba(255,107,53,0.15);
+        }
+
+        .btn-search {
+          padding: 8px 20px;
+          background: linear-gradient(135deg, var(--primary), #FF8C42);
+          border: none;
+          border-radius: 10px;
+          color: white;
+          font-family: 'Poppins', sans-serif;
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.3s;
+          white-space: nowrap;
+        }
+
+        .btn-search:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255,107,53,0.4); }
+      </style>
+
+      <!-- 3 Period Buttons — fixed compact row -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;">
+
+        <!-- TODAY -->
+        <button class="prd-btn active-today" id="btn-today"
+          onclick="setPeriodNew('today', this)">
+          <span style="font-size:20px;line-height:1;">📅</span>
+          <span style="font-size:12px;font-weight:700;">Today</span>
+          <span id="todaySub" style="font-size:10px;opacity:0.8;"></span>
+        </button>
+
+        <!-- THIS MONTH -->
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <button class="prd-btn" id="btn-month"
+            onclick="setPeriodNew('month', this)"
+            style="flex:1;border-radius:16px 16px 0 0;padding:10px 6px 6px;">
+            <span style="font-size:20px;line-height:1;">🗓️</span>
+            <span id="monthLabel" style="font-size:12px;font-weight:700;">This Month</span>
+          </button>
+          <div style="display:flex;background:rgba(255,255,255,0.06);border-radius:0 0 16px 16px;border:1px solid rgba(255,255,255,0.08);border-top:none;overflow:hidden;">
+            <button onclick="navMonth(-1)"
+              style="flex:1;background:none;border:none;color:white;padding:7px;cursor:pointer;font-size:13px;border-right:1px solid rgba(255,255,255,0.08);">◀</button>
+            <span id="monthCurrent"
+              style="flex:2;text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:7px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+            <button onclick="navMonth(1)"
+              style="flex:1;background:none;border:none;color:white;padding:7px;cursor:pointer;font-size:13px;border-left:1px solid rgba(255,255,255,0.08);">▶</button>
+          </div>
+        </div>
+
+        <!-- THIS YEAR -->
+        <div style="display:flex;flex-direction:column;gap:0;">
+          <button class="prd-btn" id="btn-year"
+            onclick="setPeriodNew('year', this)"
+            style="flex:1;border-radius:16px 16px 0 0;padding:10px 6px 6px;">
+            <span style="font-size:20px;line-height:1;">📊</span>
+            <span id="yearLabel" style="font-size:12px;font-weight:700;">This Year</span>
+          </button>
+          <div style="display:flex;background:rgba(255,255,255,0.06);border-radius:0 0 16px 16px;border:1px solid rgba(255,255,255,0.08);border-top:none;overflow:hidden;">
+            <button onclick="navYear(-1)"
+              style="flex:1;background:none;border:none;color:white;padding:7px;cursor:pointer;font-size:13px;border-right:1px solid rgba(255,255,255,0.08);">◀</button>
+            <span id="yearCurrent"
+              style="flex:2;text-align:center;font-size:11px;font-weight:700;color:var(--text2);padding:7px 2px;"></span>
+            <button onclick="navYear(1)"
+              style="flex:1;background:none;border:none;color:white;padding:7px;cursor:pointer;font-size:13px;border-left:1px solid rgba(255,255,255,0.08);">▶</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div id="periodLabel" style="font-size:12px;color:var(--text2);margin-bottom:12px;text-align:center;"></div>
+
+      <!-- Search Data Bar -->
+      <div class="search-data-bar">
+        <label>🔍 Search Data:</label>
+        <input type="date" class="search-date-input" id="searchDate"
+          onchange="searchByDate(this.value)">
+        <button class="btn-search" onclick="searchByDate(document.getElementById('searchDate').value)">
+          🔍 Search
+        </button>
+        <button class="btn-search" style="background:rgba(255,255,255,0.1);color:var(--text2);"
+          onclick="clearSearch()">
+          ✕ Clear
+        </button>
+        <span id="searchStatus" style="font-size:12px;color:var(--text2);"></span>
+      </div>
+
+      <!-- Category Filters -->
+      <div class="category-filters" style="flex-wrap:wrap;gap:6px;margin-bottom:16px;">
+        <button class="cat-btn all active" onclick="setCategory('all',this)"
+          style="font-size:12px;padding:8px 14px;">🌐 All</button>
+        <button class="cat-btn food"     onclick="setCategory('food',this)"
+          style="font-size:12px;padding:8px 14px;">🍔 Food</button>
+        <button class="cat-btn shopping" onclick="setCategory('shopping',this)"
+          style="font-size:12px;padding:8px 14px;">🛍️ Shopping</button>
+        <button class="cat-btn khudaar"  onclick="setCategory('khudaar',this)"
+          style="font-size:12px;padding:8px 14px;">🥦 Khudaar</button>
+        <button class="cat-btn raashin"  onclick="setCategory('raashin',this)"
+          style="font-size:12px;padding:8px 14px;">🌾 Raashin</button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-grid" style="grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;">
+        <div class="stat-card orange">
+          <div class="stat-icon" style="font-size:28px;">💰</div>
+          <div class="stat-value" id="statRevenue" style="font-size:22px;">$0</div>
+          <div class="stat-label">Total Revenue</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-icon">📦</div>
+          <div class="stat-value" id="statOrders">0</div>
+          <div class="stat-label">Total Orders</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon">🍔</div>
+          <div class="stat-value" id="statFood">$0</div>
+          <div class="stat-label">Food Sales</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon">🛍️</div>
+          <div class="stat-value" id="statShopping">$0</div>
+          <div class="stat-label">Shopping Sales</div>
+        </div>
+      </div>
+
+      <!-- Orders Table -->
+      <div class="card">
+        <h3 style="margin-bottom:16px;font-size:16px;">📋 Orders</h3>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="ordersTable">
+              <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--text2);">
+                <div class="spinner"></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <footer class="footer">
+      📞 <strong>+252907899345</strong> &nbsp;|&nbsp; 🌐 <a href="http://www.restsystem.com">www.restsystem.com</a>
+      &nbsp;|&nbsp; © Created By Abdifatah Said
+    </footer>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+let currentPeriod   = 'today';
+let currentCategory = 'all';
+let offsets  = { today: 0, month: 0, year: 0 };
+let notifOpen = false;
+let searchMode = false;
+let searchDateVal = '';
+
+const debouncedLoad = debounce(loadStats, 250);
+
+// ── Init labels ──
+function initLabels() {
+  const now = new Date();
+  // Today sub-label
+  document.getElementById('todaySub').textContent =
+    now.toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+  // Month
+  updateMonthDisplay();
+  // Year
+  updateYearDisplay();
+}
+
+function updateMonthDisplay() {
+  const now = new Date();
+  const d   = new Date(now.getFullYear(), now.getMonth() + offsets.month, 1);
+  const mn  = d.toLocaleString('default',{month:'short'});
+  const yr  = d.getFullYear();
+  document.getElementById('monthCurrent').textContent = mn + ' ' + yr;
+  document.getElementById('monthLabel').textContent   =
+    offsets.month === 0 ? 'This Month' : mn + ' ' + yr;
+}
+
+function updateYearDisplay() {
+  const now = new Date();
+  const yr  = now.getFullYear() + offsets.year;
+  document.getElementById('yearCurrent').textContent = yr;
+  document.getElementById('yearLabel').textContent   =
+    offsets.year === 0 ? 'This Year' : yr;
+}
+
+function setPeriodNew(period, btn) {
+  searchMode    = false;
+  currentPeriod = period;
+  document.getElementById('searchStatus').textContent = '';
+  // Remove active from all
+  ['today','month','year'].forEach(p => {
+    const b = document.getElementById('btn-' + p);
+    if (b) { b.className = 'prd-btn'; }
+  });
+  if (btn) btn.classList.add('active-' + period);
+  debouncedLoad();
+}
+
+function navMonth(dir) {
+  offsets.month += dir;
+  updateMonthDisplay();
+  // Auto-switch to month view
+  setPeriodNew('month', document.getElementById('btn-month'));
+}
+
+function navYear(dir) {
+  offsets.year += dir;
+  updateYearDisplay();
+  setPeriodNew('year', document.getElementById('btn-year'));
+}
+
+// Legacy support
+function setPeriod(period, btn) { setPeriodNew(period, btn); }
+function changeOffset(period, dir) {
+  if (period === 'month') navMonth(dir);
+  else if (period === 'year') navYear(dir);
+}
+
+function setCategory(cat, btn) {
+  currentCategory = cat;
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadStats();
+}
+
+// ── Search by date ──
+function searchByDate(dateVal) {
+  if (!dateVal) { showToast('⚠️ Taariikhda dooro!', 'error'); return; }
+  searchMode   = true;
+  searchDateVal = dateVal;
+  document.getElementById('searchStatus').textContent = '🔍 Searching: ' + dateVal;
+  loadStats();
+}
+
+function clearSearch() {
+  searchMode    = false;
+  searchDateVal = '';
+  document.getElementById('searchDate').value = '';
+  document.getElementById('searchStatus').textContent = '';
+  loadStats();
+}
+
+async function loadStats() {
+  let params;
+  if (searchMode && searchDateVal) {
+    params = new URLSearchParams({
+      period:   'search',
+      date:     searchDateVal,
+      category: currentCategory,
+      offset:   0
+    });
+  } else {
+    params = new URLSearchParams({
+      period:   currentPeriod,
+      category: currentCategory,
+      offset:   offsets[currentPeriod] || 0
+    });
+  }
+  const data = await apiGet(`/api/admin/stats?${params}`, 5);
+  document.getElementById('statRevenue').textContent  = '$' + data.total_revenue.toFixed(2);
+  document.getElementById('statOrders').textContent   = data.total_orders;
+  document.getElementById('statFood').textContent     = '$' + (data.breakdown.food||0).toFixed(2);
+  document.getElementById('statShopping').textContent = '$' + (data.breakdown.shopping||0).toFixed(2);
+  document.getElementById('periodLabel').textContent  = '📅 ' + data.period_label;
+
+  const tbody = document.getElementById('ordersTable');
+  if (!data.orders.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text2);">Xog kuma jirto</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.orders.map(o => `
+    <tr>
+      <td><code style="color:var(--primary);font-size:11px;">${o.Order_ID||'—'}</code></td>
+      <td><strong>${o.Customer_Name||'—'}</strong><br><small style="color:var(--text2)">${o.Phone||''}</small></td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${parseItems(o.Items)}</td>
+      <td><strong style="color:var(--primary)">$${parseFloat(o.Final_Total||0).toFixed(2)}</strong></td>
+      <td>${statusBadge(o.Status)}</td>
+      <td style="font-size:12px;color:var(--text2)">${formatDate(o.Date)}</td>
+    </tr>
+  `).join('');
+}
+
+async function loadNotifications() {
+  const data = await apiGet('/api/notifications');
+  const count = data.count;
+  const badge = document.getElementById('notifCount');
+  badge.style.display = count > 0 ? 'flex' : 'none';
+  badge.textContent = count;
+  document.getElementById('notifTotal').textContent = `(${count})`;
+
+  const list = document.getElementById('notifList');
+  if (!data.orders.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text2)">Order cusub kuma jiro ✅</div>';
+    return;
+  }
+  list.innerHTML = data.orders.map(o => `
+    <div class="notif-item">
+      <div class="customer-name">👤 ${o.Customer_Name||'Unknown'}</div>
+      <div class="order-info">
+        📦 ${parseItems(o.Items)}<br>
+        💰 $${parseFloat(o.Final_Total||0).toFixed(2)} &nbsp;|&nbsp;
+        📍 ${o.District||''}, ${o.City||''}<br>
+        📞 ${o.Phone||''} &nbsp;|&nbsp; 👤 Sender: ${o.Sender_Name||''}
+      </div>
+      <div class="notif-actions">
+        <button class="btn btn-success btn-sm" onclick="acceptOrder('${o.Order_ID}')">✅ Accept</button>
+        <button class="btn btn-danger btn-sm"  onclick="declineOrder('${o.Order_ID}')">❌ Decline</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleNotifPanel() {
+  notifOpen = !notifOpen;
+  document.getElementById('notifPanel').classList.toggle('show', notifOpen);
+  if (notifOpen) loadNotifications();
+}
+
+// Track accepted orders — prevent ANY re-click
+const _acceptedOrders = new Set();
+
+async function acceptOrder(orderId) {
+  // Already accepted in this session
+  if (_acceptedOrders.has(orderId)) {
+    showToast('⚠️ Order hore ayaa la aqbalay!', 'info');
+    return;
+  }  // Prevent double click
+  const btns = document.querySelectorAll(`[onclick="acceptOrder('${orderId}')"]`);
+  btns.forEach(b => { b.disabled = true; b.textContent = '⏳...'; });
+
+  const res = await apiPost('/api/order/accept', { order_id: orderId });
+
+  if (res.success) {
+    _acceptedOrders.add(orderId);
+    showToast('✅ Order accepted!', 'success');
+    loadNotifications();
+    if (typeof loadStats === 'function') loadStats();
+    if (typeof loadTab  === 'function') loadTab('pending');
+  } else {
+    showToast('⚠️ ' + (res.message || 'Error'), 'error');
+    // Re-enable on fail
+    btns.forEach(b => { b.disabled = false; b.textContent = '✅ Accept'; });
+  }
+}
+
+async function declineOrder(orderId) {
+  const btns = document.querySelectorAll(`[onclick="declineOrder('${orderId}')"]`);
+  btns.forEach(b => { b.disabled = true; b.textContent = '⏳...'; });
+  const res = await apiPost('/api/order/decline', { order_id: orderId });
+  if (res.success) {
+    showToast('❌ Order declined', 'error');
+    loadNotifications();
+  } else {
+    btns.forEach(b => { b.disabled = false; b.textContent = '❌ Decline'; });
+  }
+}
+
+// Init
+initLabels();
+loadStats();
+loadNotifications();
+setInterval(loadNotifications, 10000); // 10s — server caches 8s anyway
+
+// Close notif when clicking outside
+document.addEventListener('click', e => {
+  if (!document.getElementById('notifPanel').contains(e.target) &&
+      !document.getElementById('notifBtn').contains(e.target)) {
+    document.getElementById('notifPanel').classList.remove('show');
+    notifOpen = false;
+  }
+});
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>

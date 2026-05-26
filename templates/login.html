@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#FF6B35">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RES SYSTEM">
+<link rel="apple-touch-icon" href="/static/images/icon-192.png">
+<title>RES SYSTEM — Login</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+* { box-sizing: border-box; }
+
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%);
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+}
+
+/* ── Food Icons ── */
+.food-icons-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.food-icon {
+  position: absolute;
+  bottom: -60px;
+  opacity: 0;
+  animation: riseUp linear infinite;
+  user-select: none;
+  pointer-events: none;
+  line-height: 1;
+}
+
+@keyframes riseUp {
+  0%   { opacity: 0;    transform: translateY(0)      rotate(0deg)   scale(0.7); }
+  8%   { opacity: 0.18; }
+  85%  { opacity: 0.13; }
+  100% { opacity: 0;    transform: translateY(-110vh)  rotate(340deg) scale(1.1); }
+}
+
+/* ── Card ── */
+.login-card {
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 28px;
+  padding: 44px 36px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  z-index: 2;
+  animation: slideUp 0.6s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes slideUp {
+  from { opacity:0; transform: translateY(40px) scale(0.95); }
+  to   { opacity:1; transform: translateY(0)    scale(1); }
+}
+
+/* ── Logo ── */
+.logo-wrap { text-align: center; margin-bottom: 28px; }
+
+.logo-circle {
+  width: 78px; height: 78px;
+  background: linear-gradient(135deg, #FF6B35, #FF8C42);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  font-size: 34px;
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+  0%,100% { box-shadow: 0 6px 24px rgba(255,107,53,0.45); }
+  50%      { box-shadow: 0 6px 44px rgba(255,107,53,0.8); }
+}
+
+.logo-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #FF6B35;
+  letter-spacing: 2px;
+  font-family: 'Playfair Display', Georgia, serif;
+  margin-bottom: 4px;
+}
+
+.logo-sub {
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  letter-spacing: 0.3px;
+}
+
+/* ── Hint ── */
+.hint {
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  margin-bottom: 18px;
+  font-weight: 500;
+}
+
+/* ── Role Buttons ── */
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.role-btn-new {
+  padding: 20px 10px 18px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+  position: relative;
+  overflow: hidden;
+}
+
+.role-btn-new:hover  { transform: translateY(-5px); }
+.role-btn-new:active { transform: translateY(-2px); }
+
+.role-btn-new .ricon {
+  font-size: 36px;
+  line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+}
+
+.role-btn-new .rlabel {
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.35;
+  text-align: center;
+  color: #FFFFFF;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.5);
+  letter-spacing: 0.2px;
+}
+
+.role-btn-new .rbadge {
+  position: absolute;
+  top: 9px; right: 9px;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 50px;
+  background: rgba(255,255,255,0.22);
+  color: white;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.role-btn-new.admin {
+  background: linear-gradient(145deg, #FF6B35 0%, #e85a22 60%, #cc4a15 100%);
+  box-shadow: 0 8px 28px rgba(255,107,53,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.role-btn-new.admin:hover {
+  box-shadow: 0 14px 36px rgba(255,107,53,0.7), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.role-btn-new.customer {
+  background: linear-gradient(145deg, #2980B9 0%, #1a6fa0 60%, #0d5a85 100%);
+  box-shadow: 0 8px 28px rgba(41,128,185,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.role-btn-new.customer:hover {
+  box-shadow: 0 14px 36px rgba(41,128,185,0.7), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* ── Admin Form ── */
+.admin-form-new {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+.admin-form-new.show { display: block; }
+
+@keyframes fadeIn {
+  from { opacity:0; transform: translateY(-8px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.back-btn {
+  background: rgba(255,255,255,0.08);
+  border: none;
+  color: white;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.back-btn:hover { background: rgba(255,255,255,0.18); }
+
+.form-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+}
+
+/* ── Divider ── */
+.divider {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+}
+.divider span { flex:1; height:1px; background:rgba(255,255,255,0.1); }
+.divider p    { font-size:11px; color:rgba(255,255,255,0.28); white-space:nowrap; }
+
+/* ── Install Banner ── */
+.install-banner {
+  display: none;
+  background: rgba(255,107,53,0.1);
+  border: 1px solid rgba(255,107,53,0.25);
+  border-radius: 14px;
+  padding: 13px 16px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+.install-banner p {
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 9px;
+}
+.install-banner button {
+  background: linear-gradient(135deg,#FF6B35,#FF8C42);
+  border: none; color: white;
+  padding: 9px 22px; border-radius: 50px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(255,107,53,0.4);
+  transition: transform 0.2s;
+}
+.install-banner button:hover { transform: translateY(-2px); }
+
+.copyright-text {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.22);
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+<div class="login-page">
+  <div class="food-icons-bg" id="foodBg"></div>
+
+  <div class="login-card">
+    <!-- Logo -->
+    <div class="logo-wrap">
+      <div class="logo-circle">🏪</div>
+      <div class="logo-title">RES SYSTEM</div>
+      <div class="logo-sub">Multi-Category Store Management</div>
+    </div>
+
+    <!-- Role Selection -->
+    <div id="roleSelection">
+      <p class="hint">👋 Dooro nooca aad tahay:</p>
+      <div class="btn-row">
+        <button class="role-btn-new admin" onclick="showAdminForm()">
+          <span class="rbadge">Admin</span>
+          <span class="ricon">👨‍💼</span>
+          <span class="rlabel">Continue As<br>Admin</span>
+        </button>
+        <button class="role-btn-new customer" onclick="showCustomerForm()">
+          <span class="rbadge">Customer</span>
+          <span class="ricon">🛒</span>
+          <span class="rlabel">Continue As<br>Customer</span>
+        </button>
+      </div>
+
+      <div class="divider">
+        <span></span><p>★ RES SYSTEM APP ★</p><span></span>
+      </div>
+
+      <div class="install-banner" id="installBanner">
+        <p>📲 App-ka telefoonkaaga ku rakib!</p>
+        <button onclick="installApp()">⬇️ Install RES SYSTEM</button>
+      </div>
+    </div>
+
+    <!-- Customer Form -->
+    <div class="admin-form-new" id="customerForm">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <button class="back-btn" onclick="backToRoles()">←</button>
+        <span class="form-title">Customer Login</span>
+      </div>
+      <div class="form-group">
+        <label>Magacaaga</label>
+        <input type="text" id="customerName" placeholder="Magacaaga oo buuxa">
+      </div>
+      <div class="form-group">
+        <label>Telefoonkaaga 📞</label>
+        <input type="tel" id="customerPhone" placeholder="+252...">
+      </div>
+      <button class="btn-login" style="background:linear-gradient(135deg,#3498DB,#5DADE2);" onclick="loginAsCustomer()">
+        🛒 Continue As Customer
+      </button>
+      <p class="error-msg" id="customerError">⚠️ Telefoonkaaga gali!</p>
+    </div>
+
+    <!-- Admin Form -->
+    <div class="admin-form-new" id="adminForm">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <button class="back-btn" onclick="backToRoles()">←</button>
+        <span class="form-title">Admin Login</span>
+      </div>
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" id="adminUsername" placeholder="Admin" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="adminPassword" placeholder="••••••" autocomplete="off">
+      </div>
+      <button class="btn-login" onclick="loginAsAdmin()">
+        🔐 Gal Admin Dashboard
+      </button>
+      <p class="error-msg" id="loginError">❌ Username ama Password khalad ah!</p>
+    </div>
+
+    <p class="copyright-text">© Created By Abdifatah Said</p>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>
+function showAdminForm() {
+  document.getElementById('roleSelection').style.display = 'none';
+  const form = document.getElementById('adminForm');
+  form.classList.add('show');
+  form.style.display = 'block';
+}
+
+function backToRoles() {
+  document.getElementById('roleSelection').style.display = 'block';
+  ['adminForm','customerForm'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove('show'); el.style.display = 'none'; }
+  });
+  ['loginError','customerError'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+
+async function loginAsAdmin() {
+  const username = document.getElementById('adminUsername').value.trim();
+  const password = document.getElementById('adminPassword').value.trim();
+  if (!username || !password) {
+    const err = document.getElementById('loginError');
+    err.style.display = 'block';
+    err.textContent = '⚠️ Buuxi username iyo password!';
+    return;
+  }
+  const res = await fetch('/login', {
+    method: 'POST',
+    body: new URLSearchParams({ role:'admin', username, password })
+  });
+  const data = await res.json();
+  if (data.success) {
+    window.location.href = data.redirect;
+  } else {
+    const err = document.getElementById('loginError');
+    err.style.display = 'block';
+    err.textContent = '❌ Username ama Password khalad ah!';
+  }
+}
+
+function showCustomerForm() {
+  document.getElementById('roleSelection').style.display = 'none';
+  const form = document.getElementById('customerForm');
+  form.classList.add('show');
+  form.style.display = 'block';
+}
+
+async function loginAsCustomer() {
+  const phone = document.getElementById('customerPhone').value.trim();
+  const name  = document.getElementById('customerName').value.trim();
+  if (!phone) {
+    const err = document.getElementById('customerError');
+    err.style.display = 'block';
+    err.textContent = '⚠️ Telefoonkaaga gali!';
+    return;
+  }
+  const res = await fetch('/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `role=customer&phone=${encodeURIComponent(phone)}&name=${encodeURIComponent(name)}`
+  });
+  const data = await res.json();
+  if (data.success) {
+    window.location.href = data.redirect;
+  } else {
+    const err = document.getElementById('customerError');
+    err.style.display = 'block';
+    err.textContent = '❌ ' + (data.message || 'Error');
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') loginAsAdmin();
+});
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+
+// ── Food Icons — Bottom to Top ──
+const FOOD_EMOJIS = [
+  '🍕','🍔','🍟','🌮','🌯','🍖','🍗','🥩','🥗',
+  '🍜','🍝','🍛','🍣','🍱','🥘','🍲','🥙','🧆',
+  '🥚','🍳','🧇','🥞','🧈','🥐','🥖','🍞','🥨',
+  '🧀','🥦','🥕','🍅','🧅','🧄','🌽','🫑',
+  '🍉','🍊','🍋','🍇','🍓','🫐','🍒','🍑','🥭',
+  '🍦','🍧','🍨','🍩','🍪','🎂','🍰','🧁','🍫',
+  '☕','🍵','🧋','🥛','🛒','🏪','🍽️','🥄','🍴'
+];
+
+function createFoodIcon() {
+  const bg   = document.getElementById('foodBg');
+  const icon = document.createElement('div');
+  icon.className   = 'food-icon';
+  icon.textContent = FOOD_EMOJIS[Math.floor(Math.random() * FOOD_EMOJIS.length)];
+
+  const size = Math.random() * 22 + 15;
+  const left = Math.random() * 96;
+  const dur  = Math.random() * 11 + 9;
+  const del  = Math.random() * -18;
+  const blur = Math.random() * 2 + 0.5;
+
+  icon.style.cssText = `
+    font-size:${size}px;
+    left:${left}%;
+    animation-duration:${dur}s;
+    animation-delay:${del}s;
+    filter:blur(${blur}px);
+  `;
+
+  bg.appendChild(icon);
+  setTimeout(() => {
+    if (icon.parentNode) icon.parentNode.removeChild(icon);
+  }, (dur + Math.abs(del) + 2) * 1000);
+}
+
+for (let i = 0; i < 32; i++) createFoodIcon();
+setInterval(createFoodIcon, 600);
+
+// ── PWA Install ──
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').style.display = 'block';
+});
+
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(r => {
+      if (r.outcome === 'accepted') {
+        document.getElementById('installBanner').style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+  } else {
+    alert('📲 iOS: Share button → "Add to Home Screen" → Add');
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').style.display = 'none';
+});
+</script>
+</body>
+</html>

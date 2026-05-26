@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="so">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#FF6B35">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RES SYSTEM">
+  <link rel="apple-touch-icon" href="/static/images/icon-192.png">
+<title>About — RES SYSTEM</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-circle">🏪</div>
+      <h2>RES SYSTEM</h2>
+      <p id="custGreet">Welcome!</p>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/customer/home"        class="nav-item"><span class="nav-icon">🏠</span> Home</a>
+      <a href="/customer/menu"        class="nav-item"><span class="nav-icon">🍽️</span> Menu</a>
+      <a href="/customer/message"     class="nav-item"><span class="nav-icon">💬</span> Message</a>
+      <a href="/customer/call-center" class="nav-item"><span class="nav-icon">📞</span> Call Center</a>
+      <a href="/customer/about"       class="nav-item active"><span class="nav-icon">ℹ️</span> About</a>
+      <a href="/logout"               class="nav-item logout"><span class="nav-icon">🚪</span> Logout</a>
+    </nav>
+    <div class="sidebar-footer">© Created By Abdifatah Said</div>
+  </aside>
+  <div class="sidebar-overlay"></div>
+
+  <main class="main-content">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="hamburger">☰</button>
+        <span class="topbar-title">ℹ️ About Us</span>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div style="max-width:680px;margin:0 auto;">
+
+        <!-- Logo Banner -->
+        <div style="background:linear-gradient(135deg,rgba(255,107,53,0.2),rgba(52,152,219,0.1));border:1px solid rgba(255,107,53,0.3);border-radius:24px;padding:36px;margin-bottom:24px;text-align:center;">
+          <div style="width:80px;height:80px;background:linear-gradient(135deg,var(--primary),#FF8C42);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:36px;box-shadow:0 8px 24px rgba(255,107,53,0.4);">
+            🏪
+          </div>
+          <h1 style="font-family:'Playfair Display',serif;font-size:28px;color:var(--primary);margin-bottom:6px;">RES SYSTEM</h1>
+          <p style="color:var(--text2);font-size:13px;">Food • Shopping • Khudaar • Raashin</p>
+        </div>
+
+        <!-- About Content -->
+        <div class="card" style="margin-bottom:20px;">
+          <div id="aboutContent" style="font-size:15px;line-height:1.9;color:var(--text);white-space:pre-wrap;min-height:80px;">
+            <div class="spinner"></div>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div style="background:linear-gradient(135deg,rgba(39,174,96,0.15),rgba(52,152,219,0.08));border:1px solid rgba(39,174,96,0.25);border-radius:20px;padding:24px;text-align:center;">
+          <h3 style="font-size:16px;font-weight:700;color:var(--green);margin-bottom:16px;">📬 Contact Us</h3>
+          <div style="display:flex;flex-direction:column;gap:10px;align-items:center;">
+            <a href="tel:+252907899345"
+              style="display:inline-flex;align-items:center;gap:10px;color:white;text-decoration:none;font-size:16px;font-weight:700;background:rgba(255,255,255,0.07);padding:12px 24px;border-radius:50px;transition:all 0.3s;"
+              onmouseover="this.style.background='rgba(255,107,53,0.2)'"
+              onmouseout="this.style.background='rgba(255,255,255,0.07)'">
+              📞 +252907899345
+            </a>
+            <a href="http://www.restsystem.com" target="_blank"
+              style="display:inline-flex;align-items:center;gap:10px;color:var(--blue);text-decoration:none;font-size:15px;font-weight:600;background:rgba(52,152,219,0.1);padding:10px 24px;border-radius:50px;transition:all 0.3s;"
+              onmouseover="this.style.background='rgba(52,152,219,0.2)'"
+              onmouseout="this.style.background='rgba(52,152,219,0.1)'">
+              🌐 www.restsystem.com
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="footer">
+      📞 <strong>+252907899345</strong> &nbsp;|&nbsp; 🌐 <a href="#">www.restsystem.com</a>
+      &nbsp;|&nbsp; © Created By Abdifatah Said
+    </footer>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script>fetch('/api/customer/profile').then(r=>r.json()).then(d=>{if(d.name&&document.getElementById('custGreet'))document.getElementById('custGreet').textContent='👋 '+d.name;}).catch(()=>{});</script>
+<script>
+async function loadAbout() {
+  const data = await apiGet('/api/about');
+  const el = document.getElementById('aboutContent');
+  el.textContent = data.content || 'Macluumaad la gelin waayay. Fadlan dib u eeg.';
+}
+loadAbout();
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('SW registered'))
+      .catch(e => console.log('SW error:', e));
+  });
+}
+</script>
+</body>
+</html>
